@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Motion Explorer</title>
   <style>
-    canvas { border: 1px solid black; }
-    #quiz, #desc { margin: 10px; }
-    button { margin: 5px; }
+    canvas {
+      border: 1px solid black;
+    }
+
+    #quiz,
+    #desc {
+      margin: 10px;
+    }
+
+    button {
+      margin: 5px;
+    }
   </style>
 </head>
+
 <body>
   <div id="menu"></div>
   <div id="desc"></div>
@@ -19,6 +30,7 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let x = 50, y = 100, angle = 0;
+    let animationId = null;
 
     // Зареждане на движения
     fetch('http://localhost:3000/api/movements')
@@ -32,7 +44,8 @@
           menu.appendChild(btn);
         });
         loadMovement(1); // Зареди първото
-      });
+      })
+      .catch(err => console.error('Error loading movements:', err));
 
     // Зареждане на движение
     function loadMovement(id) {
@@ -40,7 +53,7 @@
         .then(res => res.json())
         .then(m => {
           document.getElementById('desc').textContent = m.desc;
-          document.getElementById('figure').src = `/public/${m.figure}`;
+          document.getElementById('figure').src = `http://localhost:3000/${m.figure}`;
           startAnimation(m.type);
           showQuiz(m.id, m.type);
         });
@@ -48,30 +61,41 @@
 
     // Анимация
     function startAnimation(type) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      if (type === 'Праволинейно') {
-        x = (x + 2) % 400;
-        ctx.moveTo(x, y); ctx.lineTo(x + 20, y); // Стрелка
-      } else if (type === 'Криволинейно') {
-        x = (x + 2) % 400; y = 100 + Math.sin(x / 20) * 50;
-        ctx.arc(x, y, 10, 0, Math.PI * 2); // Зигзаг
-      } else if (type === 'Въртене') {
-        angle += 0.05; x = 200 + Math.cos(angle) * 50; y = 100 + Math.sin(angle) * 50;
-        ctx.arc(x, y, 10, 0, Math.PI * 2); // Кръг
-      } else if (type === 'Трептене') {
-        x = 200 + Math.sin(angle) * 100; angle += 0.1;
-        ctx.arc(x, y, 10, 0, Math.PI * 2); // Люлеене
+      if (animationId) {
+        cancelAnimationFrame(animationId);
       }
-      ctx.fill();
-      requestAnimationFrame(() => startAnimation(type));
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        if (type === 'Праволинейно') {
+          x = (x + 2) % 400;
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 20, y); // Стрелка
+          ctx.stroke();
+        } else if (type === 'Криволинейно') {
+          x = (x + 2) % 400; y = 100 + Math.sin(x / 20) * 50;
+          ctx.arc(x, y, 10, 0, Math.PI * 2); // Зигзаг
+        } else if (type === 'Въртене') {
+          angle += 0.05; x = 200 + Math.cos(angle) * 50; y = 100 + Math.sin(angle) * 50;
+          ctx.arc(x, y, 10, 0, Math.PI * 2); // Кръг
+        } else if (type === 'Трептене') {
+          x = 200 + Math.sin(angle) * 100; angle += 0.1;
+          ctx.arc(x, y, 10, 0, Math.PI * 2); // Люлеене
+        }
+        ctx.fill();
+        animationId = requestAnimationFrame(() => animate());
+      }
+      animate();
     }
 
     // Интерактивност: влачене
     canvas.addEventListener('mousemove', (e) => {
       if (e.buttons === 1) { // Ако влачи
         x = e.offsetX; y = e.offsetY;
-        document.getElementById('desc').textContent += ' (Влачиш обекта!)';
+        const desc = document.getElementById('desc');
+        if (!desc.textContent.includes('(Влачиш обекта!)')) {
+          desc.textContent += ' (Влачиш обекта!)';
+        }
       }
     });
 
@@ -97,4 +121,5 @@
     }
   </script>
 </body>
+
 </html>

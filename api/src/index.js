@@ -2,11 +2,14 @@ import express from "express";
 import 'dotenv/config';
 import routes from "./routes.js";
 import initDatabase from "./config/dbCOnfig";
+import cors from "cors";
 
 const app = express();
 const PORT = process.env.PORT;
 
 initDatabase();
+
+app.use(cors());
 
 app.use(express.json());
 
