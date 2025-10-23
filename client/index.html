@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Motion Explorer</title>
+  <style>
+    canvas { border: 1px solid black; }
+    #quiz, #desc { margin: 10px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <div id="menu"></div>
+  <div id="desc"></div>
+  <img id="figure" style="max-width: 200px;">
+  <canvas id="canvas" width="400" height="200"></canvas>
+  <div id="quiz"></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let x = 50, y = 100, angle = 0;
+
+    // Зареждане на движения
+    fetch('http://localhost:3000/api/movements')
+      .then(res => res.json())
+      .then(data => {
+        const menu = document.getElementById('menu');
+        data.forEach(m => {
+          const btn = document.createElement('button');
+          btn.textContent = m.type;
+          btn.onclick = () => loadMovement(m.id);
+          menu.appendChild(btn);
+        });
+        loadMovement(1); // Зареди първото
+      });
+
+    // Зареждане на движение
+    function loadMovement(id) {
+      fetch(`http://localhost:3000/api/movements/${id}`)
+        .then(res => res.json())
+        .then(m => {
+          document.getElementById('desc').textContent = m.desc;
+          document.getElementById('figure').src = `/public/${m.figure}`;
+          startAnimation(m.type);
+          showQuiz(m.id, m.type);
+        });
+    }
+
+    // Анимация
+    function startAnimation(type) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      if (type === 'Праволинейно') {
+        x = (x + 2) % 400;
+        ctx.moveTo(x, y); ctx.lineTo(x + 20, y); // Стрелка
+      } else if (type === 'Криволинейно') {
+        x = (x + 2) % 400; y = 100 + Math.sin(x / 20) * 50;
+        ctx.arc(x, y, 10, 0, Math.PI * 2); // Зигзаг
+      } else if (type === 'Въртене') {
+        angle += 0.05; x = 200 + Math.cos(angle) * 50; y = 100 + Math.sin(angle) * 50;
+        ctx.arc(x, y, 10, 0, Math.PI * 2); // Кръг
+      } else if (type === 'Трептене') {
+        x = 200 + Math.sin(angle) * 100; angle += 0.1;
+        ctx.arc(x, y, 10, 0, Math.PI * 2); // Люлеене
+      }
+      ctx.fill();
+      requestAnimationFrame(() => startAnimation(type));
+    }
+
+    // Интерактивност: влачене
+    canvas.addEventListener('mousemove', (e) => {
+      if (e.buttons === 1) { // Ако влачи
+        x = e.offsetX; y = e.offsetY;
+        document.getElementById('desc').textContent += ' (Влачиш обекта!)';
+      }
+    });
+
+    // Квиз (игра)
+    function showQuiz(id, correctAnswer) {
+      const quizDiv = document.getElementById('quiz');
+      quizDiv.innerHTML = `
+        <p>Какво е това движение?</p>
+        <button onclick="submitAnswer(${id}, 'Праволинейно')">Праволинейно</button>
+        <button onclick="submitAnswer(${id}, 'Криволинейно')">Криволинейно</button>
+        <button onclick="submitAnswer(${id}, 'Въртене')">Въртене</button>
+        <button onclick="submitAnswer(${id}, 'Трептене')">Трептене</button>
+      `;
+    }
+
+    function submitAnswer(questionId, answer) {
+      fetch('http://localhost:3000/api/quiz', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, answer })
+      })
+        .then(res => res.json())
+        .then(data => alert(data.message));
+    }
+  </script>
+</body>
+</html>
