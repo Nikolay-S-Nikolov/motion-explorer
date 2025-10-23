@@ -1,0 +1,10 @@
+### initialize API with Express and MongoDB integration
+
+- [x] Added package.json for API with dependencies: dotenv, express, mongoose.
+- [x] Implemented database connection in dbConfig.js.
+- [x] Created homeController for basic health check endpoint.
+- [x] Developed movementController to manage movement data and retrieval.
+- [x] Added quizController for handling quiz submissions and responses.
+- [x] Set up main server file (index.js) to initialize Express app and routes.
+- [x] Defined routes in routes.js for movement and quiz endpoints.
+- [x] Created client-side HTML (index.html) for user interaction with movements and quizzes.
