@@ -16,6 +16,40 @@
     button {
       margin: 5px;
     }
+
+    /* съобщение */
+    #messageBubble {
+      position: absolute;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 10px 15px;
+      max-width: 200px;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+      font-family: sans-serif;
+      font-size: 14px;
+      z-index: 1000;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #messageBubble::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 20px;
+      border-width: 10px;
+      border-style: solid;
+      border-color: #fff transparent transparent transparent;
+    }
+
+    #messageTimer {
+      height: 5px;
+      background: #4caf50;
+      margin-top: 5px;
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
   </style>
 </head>
 
@@ -25,6 +59,10 @@
   <img id="figure" style="max-width: 200px;">
   <canvas id="canvas" width="400" height="200"></canvas>
   <div id="quiz"></div>
+  <div id="messageBubble" style="display: none;">
+    <div id="messageText"></div>
+    <div id="messageTimer"></div>
+  </div>
 
   <script>
     const canvas = document.getElementById('canvas');
@@ -39,7 +77,7 @@
         const menu = document.getElementById('menu');
         data.forEach(m => {
           const btn = document.createElement('button');
-          btn.textContent = m.type;
+          btn.textContent = m.id;
           btn.onclick = () => loadMovement(m.id);
           menu.appendChild(btn);
         });
@@ -117,8 +155,47 @@
         body: JSON.stringify({ questionId, answer })
       })
         .then(res => res.json())
-        .then(data => alert(data.message));
+        .then(data => {
+          showMessageBubble(data.message, data.correct);
+        });
     }
+
+    function showMessageBubble(message, isCorrect) {
+      const bubble = document.getElementById('messageBubble');
+      const text = document.getElementById('messageText');
+      const timer = document.getElementById('messageTimer');
+
+      text.textContent = message;
+      bubble.style.display = 'block';
+      bubble.style.opacity = '1';
+      bubble.style.borderColor = isCorrect ? '#4caf50' : '#f44336';
+      timer.style.background = isCorrect ? '#4caf50' : '#f44336';
+
+      // позиционирай над quiz бутона
+      const quizDiv = document.getElementById('quiz');
+      const rect = quizDiv.getBoundingClientRect();
+      bubble.style.top = `${rect.top - 60}px`;
+      bubble.style.left = `${rect.left + 20}px`;
+
+      let duration = 5000; // 15 секунди
+      let start = Date.now();
+
+      function updateTimer() {
+        let elapsed = Date.now() - start;
+        let percent = Math.max(0, 100 - (elapsed / duration) * 100);
+        timer.style.width = `${percent}%`;
+
+        if (elapsed < duration) {
+          requestAnimationFrame(updateTimer);
+        } else {
+          bubble.style.opacity = '0';
+          setTimeout(() => bubble.style.display = 'none', 300);
+        }
+      }
+
+      updateTimer();
+    }
+
   </script>
 </body>
 
