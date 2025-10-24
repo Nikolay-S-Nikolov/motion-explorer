@@ -10,3 +10,5 @@
 - [x] add CORS support and new images; 
 - [x] update HTML for better interaction
 - [x] enhance index.html with message bubble feature
+- [x] move styles to style.css
+- [x] adjust message bubble opacity
