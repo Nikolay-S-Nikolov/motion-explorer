@@ -12,3 +12,4 @@
 - [x] enhance index.html with message bubble feature
 - [x] move styles to style.css
 - [x] adjust message bubble opacity
+- [x] improve movement loading and quiz interaction logic

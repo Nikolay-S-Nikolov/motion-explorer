@@ -3,7 +3,7 @@
 
 <head>
   <title>Motion Explorer</title>
-<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -22,19 +22,25 @@
     const ctx = canvas.getContext('2d');
     let x = 50, y = 100, angle = 0;
     let animationId = null;
+    let currentQuestionIndex = 0;
+    let movementsData = [];
+    let isAnswering = false;
 
     // Зареждане на движения
     fetch('http://localhost:3000/api/movements')
       .then(res => res.json())
       .then(data => {
+        movementsData = data;
+        // console.log(movementsData[currentQuestionIndex])
         const menu = document.getElementById('menu');
-        data.forEach(m => {
+        data.forEach((m, index) => {
           const btn = document.createElement('button');
-          btn.textContent = m.id;
-          btn.onclick = () => loadMovement(m.id);
+          btn.textContent = index + 1;
+          btn.id = `btn-${m.id}`;
+          // btn.onclick = () => loadMovement(m.id);
           menu.appendChild(btn);
         });
-        loadMovement(1); // Зареди първото
+        loadMovement(movementsData[currentQuestionIndex].id);
       })
       .catch(err => console.error('Error loading movements:', err));
 
@@ -103,6 +109,9 @@
     }
 
     function submitAnswer(questionId, answer) {
+      if (isAnswering) return;
+      isAnswering = true;
+
       fetch('http://localhost:3000/api/quiz', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionId, answer })
@@ -110,6 +119,26 @@
         .then(res => res.json())
         .then(data => {
           showMessageBubble(data.message, data.correct);
+
+          if (data.correct) {
+            const btn = document.getElementById(`btn-${questionId}`);
+            if (btn) {
+              btn.classList.add('correct');
+            }
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < movementsData.length) {
+              setTimeout(() => {
+                isAnswering = false;
+                loadMovement(movementsData[currentQuestionIndex].id);
+              }, 3000); // забавяне за ефект
+            } else {
+              document.getElementById('quiz').innerHTML = '<p>Браво! Отговори на всички въпроси 🎉</p>';
+            }
+          } else {
+            isAnswering = false;
+          }
+
         });
     }
 
@@ -130,7 +159,7 @@
       bubble.style.top = `${rect.top - 60}px`;
       bubble.style.left = `${rect.left + 20}px`;
 
-      let duration = 5000; // 5 секунди
+      let duration = 3000; // 5 секунди
       let start = Date.now();
 
       function updateTimer() {
